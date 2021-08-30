@@ -1,4 +1,4 @@
-FROM arm32v6/alpine:3.14.0
+FROM arm32v6/alpine:3.14.2
 
 # Copy downloaded architecture emulation static binary
 COPY qemu-arm-static /usr/bin/
