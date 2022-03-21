@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:3.15.0
+FROM arm64v8/alpine:3.15.1
 
 # Copy downloaded architecture emulation static binary
 COPY qemu-aarch64-static /usr/bin/
