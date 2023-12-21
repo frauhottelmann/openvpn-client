@@ -2,7 +2,7 @@ version: '3'
 
 services:
   openvpn-client:
-    image: frauhottelmann/openvpn-client
+    image: frauhottelmann/openvpn-client:2.6.8
     container_name: openvpn-client
     restart: always
     cap_add:
