@@ -20,4 +20,4 @@ LABEL org.opencontainers.image.ref.name="frauhottelmann/openvpn-client" \
 ENTRYPOINT ["openvpn"]
 VOLUME ["/vpn"]
 
-RUN apk add --no-cache openvpn=2.6.11-r0 
+RUN apk add --no-cache openvpn=2.6.11-r0 iptables=1.8.10-r3
