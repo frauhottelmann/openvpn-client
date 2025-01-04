@@ -1,8 +1,8 @@
-FROM alpine:3.20.0
+FROM alpine:3.21.0
 
 ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
 ARG COMMIT
-ARG VERSION="2.6.11-r0"
+ARG VERSION="2.6.12-r1"
 
 STOPSIGNAL SIGKILL
 
@@ -20,4 +20,4 @@ LABEL org.opencontainers.image.ref.name="frauhottelmann/openvpn-client" \
 ENTRYPOINT ["openvpn"]
 VOLUME ["/vpn"]
 
-RUN apk add --no-cache openvpn=2.6.11-r0 iptables=1.8.10-r3
+RUN apk add --no-cache openvpn=2.6.12-r1 iptables=1.8.10-r5
