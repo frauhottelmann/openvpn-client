@@ -1,10 +1,9 @@
-version: '3'
-
+name: openvpn
 services:
   openvpn-client:
-    image: frauhottelmann/openvpn-client:2.6.12
+    image: ghcr.io/frauhottelmann//openvpn-client:latest
     container_name: openvpn-client
-    restart: always
+    restart: unless-stopped
     cap_add:
       - NET_ADMIN
     devices:
