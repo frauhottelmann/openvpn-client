@@ -1,7 +1,7 @@
 name: openvpn
 services:
   openvpn-client:
-    image: ghcr.io/frauhottelmann//openvpn-client:latest
+    image: ghcr.io/frauhottelmann/openvpn-client:latest
     container_name: openvpn-client
     restart: unless-stopped
     cap_add:
