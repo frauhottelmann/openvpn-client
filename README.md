@@ -11,7 +11,7 @@ docker run -d --name vpn-client \
   --cap-add=NET_ADMIN \
   --device /dev/net/tun \
   -v /path/with/vpn/configs:/vpn \
-  frauhottelmann/openvpn-client:tag --config /vpn/client.conf --askpass /vpn/client.pwd --auth-nocache
+  ghcr.io/frauhottelmann/openvpn-client:tag --config /vpn/client.conf --askpass /vpn/client.pwd --auth-nocache
 ```
 
 ### Route container traffic
@@ -26,13 +26,12 @@ docker run -it --rm \
 
 # docker-compose example:
 ```yaml
-version: '3'
-
+name: openvpn
 services:
   openvpn-client:
-    image: frauhottelmann/openvpn-client
+    image: ghcr.io/frauhottelmann/openvpn-client:latest
     container_name: openvpn-client
-    restart: always
+    restart: unless-stopped
     cap_add:
       - NET_ADMIN
     devices:
