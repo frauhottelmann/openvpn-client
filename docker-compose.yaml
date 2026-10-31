@@ -4,12 +4,19 @@ services:
     image: ghcr.io/frauhottelmann/openvpn-client:latest
     container_name: openvpn-client
     restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - "/dev/net/tun:/dev/net/tun"
     command: --config /vpn/client.ovpn --askpass /vpn/client.pwd --auth-nocache
     volumes:
-      - ./client/:/vpn
+      - ./client/:/vpn:ro
+    devices:
+      - "/dev/net/tun:/dev/net/tun"
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run  # iptables keeps its lock file here
+    security_opt:
+      - no-new-privileges:true
     network_mode: "bridge"
-    

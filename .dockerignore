@@ -1,2 +1,5 @@
+.git
 .github
+tests
 docker-compose.yaml
+README.md
