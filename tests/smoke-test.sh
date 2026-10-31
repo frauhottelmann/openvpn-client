@@ -2,13 +2,14 @@
 # Smoke test: builds a real tunnel between an OpenVPN server and a client,
 # both running the image under test, and pings through it.
 #
-# Usage: tests/smoke-test.sh <image> [expected OpenVPN version]
+# Usage: tests/smoke-test.sh <image> [expected OpenVPN version] [expected iptables version]
 # Needs docker, openssl and /dev/net/tun on the host. Uses sudo (if not root)
 # to hand the client config to root, as recommended in the README.
 set -euo pipefail
 
 IMAGE="${1:?usage: $0 <image> [version]}"
 VERSION="${2:-}"
+IPTABLES_VERSION="${3:-}"
 NET=openvpn-smoke
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO=sudo
@@ -34,6 +35,10 @@ if [ -n "${VERSION}" ]; then
 fi
 
 echo "== iptables"
+docker run --rm --entrypoint iptables "${IMAGE}" -V | tee "${WORK}/iptables.txt"
+if [ -n "${IPTABLES_VERSION}" ]; then
+    grep -q "^iptables v${IPTABLES_VERSION} " "${WORK}/iptables.txt"
+fi
 docker run --rm --cap-add NET_ADMIN --entrypoint iptables "${IMAGE}" -L -n
 
 echo "== Certificates"
