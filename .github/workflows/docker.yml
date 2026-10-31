@@ -45,9 +45,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
 
-    - name: Read OpenVPN version from Dockerfile
+    - name: Read package versions from Dockerfile
       id: version
-      run: echo "version=$(sed -n 's/^ARG OPENVPN_VERSION=//p' Dockerfile)" >> "$GITHUB_OUTPUT"
+      run: |
+        echo "version=$(sed -n 's/^ARG OPENVPN_VERSION=//p' Dockerfile)" >> "$GITHUB_OUTPUT"
+        echo "iptables=$(sed -n 's/^ARG IPTABLES_VERSION=//p' Dockerfile)" >> "$GITHUB_OUTPUT"
 
     - name: Check that the git tag matches the Dockerfile version
       if: github.ref_type == 'tag'
@@ -81,7 +83,7 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Smoke test (real tunnel between server and client)
-      run: tests/smoke-test.sh openvpn-client:test "${{ steps.version.outputs.version }}"
+      run: tests/smoke-test.sh openvpn-client:test "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.iptables }}"
 
     - name: Scan image for vulnerabilities
       uses: aquasecurity/trivy-action@v0.36.0
