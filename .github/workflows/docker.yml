@@ -1,35 +1,98 @@
 name: Docker Image CI
 
-permissions:
-  id-token: write
-  contents: read
-  attestations: write
-  packages: write
-
 on:
   push:
+    branches:
+      - master
     tags:
       - '*'
+  pull_request:
+  schedule:
+    # Weekly rebuild of edge to pick up Alpine security fixes
+    - cron: '23 4 * * 1'
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/frauhottelmann/openvpn-client
 
 jobs:
 
-  build:
-
+  lint:
     runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    - name: Lint Dockerfile
+      uses: hadolint/hadolint-action@v3.5.0
+      with:
+        dockerfile: Dockerfile
+
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
 
     steps:
     - name: Checkout
       uses: actions/checkout@v7
 
+    - name: Read OpenVPN version from Dockerfile
+      id: version
+      run: echo "version=$(sed -n 's/^ARG OPENVPN_VERSION=//p' Dockerfile)" >> "$GITHUB_OUTPUT"
+
+    - name: Check that the git tag matches the Dockerfile version
+      if: github.ref_type == 'tag'
+      run: |
+        tag="${GITHUB_REF_NAME#v}"
+        version="${{ steps.version.outputs.version }}"
+        case "${tag}" in
+          "${version}"|"${version}".*|"${version}"-*) ;;
+          *)
+            echo "::error::Git tag ${GITHUB_REF_NAME} does not match OPENVPN_VERSION=${version} in the Dockerfile"
+            exit 1
+            ;;
+        esac
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4
 
     - name: Set up Docker Buildx
-      id: buildx
       uses: docker/setup-buildx-action@v4
 
-    - name: Login to Github Packages
+    - name: Build image for smoke test
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        platforms: linux/amd64
+        load: true
+        pull: true
+        no-cache: ${{ github.event_name == 'schedule' }}
+        tags: openvpn-client:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Smoke test (real tunnel between server and client)
+      run: tests/smoke-test.sh openvpn-client:test "${{ steps.version.outputs.version }}"
+
+    - name: Scan image for vulnerabilities
+      uses: aquasecurity/trivy-action@v0.36.0
+      with:
+        image-ref: openvpn-client:test
+        severity: CRITICAL,HIGH
+        ignore-unfixed: true
+        exit-code: '1'
+
+    - name: Login to GitHub Container Registry
+      if: github.event_name != 'pull_request'
       uses: docker/login-action@v4
       with:
         registry: ghcr.io
@@ -40,28 +103,36 @@ jobs:
       id: meta
       uses: docker/metadata-action@v6
       with:
-        images: |
-          ghcr.io/frauhottelmann/openvpn-client
+        images: ${{ env.IMAGE }}
         tags: |
-          type=schedule
-          type=ref,event=branch
+          type=ref,event=pr
+          type=edge,branch=master
+          type=sha,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
+          type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' }}
 
-    - name: Build image and push to Docker Hub and GitHub Container Registry
+    - name: Build multi-arch image and push to GitHub Container Registry
       id: push
       uses: docker/build-push-action@v7
       with:
         context: .
-        platforms: linux/amd64,linux/arm/v7, linux/arm/v6, linux/arm64/v8
+        platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+        pull: true
+        no-cache: ${{ github.event_name == 'schedule' }}
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        annotations: ${{ steps.meta.outputs.annotations }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Generate artifact attestation
+      if: github.event_name != 'pull_request'
       uses: actions/attest@v4
       with:
-        subject-name: ghcr.io/frauhottelmann/openvpn-client
+        subject-name: ${{ env.IMAGE }}
         subject-digest: ${{ steps.push.outputs.digest }}
         push-to-registry: true

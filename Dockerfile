@@ -1,12 +1,20 @@
 FROM alpine:3
 
-ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
-ARG COMMIT
-ARG VERSION="2.7.5-r0"
+# OpenVPN version from the Alpine repositories. "~=" accepts any package
+# revision (e.g. 2.7.7-r0, 2.7.7-r1), so Alpine rebuilds don't break the build.
+# Keep this in sync with the git tag of a release.
+ARG OPENVPN_VERSION=2.7.7
 
-STOPSIGNAL SIGKILL
+# iptables is included for up/down scripts (e.g. a kill switch).
+RUN apk add --no-cache "openvpn~=${OPENVPN_VERSION}" "iptables~=1.8"
 
-ENTRYPOINT ["openvpn"]
+# Relative paths in the client config (ca, cert, key, ...) resolve against /vpn
+WORKDIR /vpn
 VOLUME ["/vpn"]
 
-RUN apk add --no-cache openvpn=2.7.5-r0 iptables=1.8.13-r0
+# Healthy as soon as OpenVPN has brought up its tunnel interface: a tun/tap
+# device, or a kernel DCO device (type 65534 = ARPHRD_NONE) on newer hosts
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["/bin/sh", "-c", "ls /sys/class/net/*/tun_flags >/dev/null 2>&1 || grep -qsx 65534 /sys/class/net/*/type"]
+
+ENTRYPOINT ["openvpn"]
