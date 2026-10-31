@@ -15,7 +15,7 @@ Images are published to `ghcr.io/frauhottelmann/openvpn-client`.
 | Tag | Built from |
 | --- | --- |
 | `latest` | the most recent release (git tag) |
-| `2.7.5`, `2.7`, `2` | a release, named after the OpenVPN version in Alpine |
+| `2.7.7`, `2.7`, `2` | a release, named after the OpenVPN version in Alpine |
 | `edge` | the latest commit on `master`, rebuilt weekly for Alpine security fixes |
 | `sha-<commit>` | a specific commit on `master` |
 

@@ -1,9 +1,9 @@
 FROM alpine:3
 
 # OpenVPN version from the Alpine repositories. "~=" accepts any package
-# revision (e.g. 2.7.5-r0, 2.7.5-r1), so Alpine rebuilds don't break the build.
+# revision (e.g. 2.7.7-r0, 2.7.7-r1), so Alpine rebuilds don't break the build.
 # Keep this in sync with the git tag of a release.
-ARG OPENVPN_VERSION=2.7.5
+ARG OPENVPN_VERSION=2.7.7
 
 # iptables is included for up/down scripts (e.g. a kill switch).
 RUN apk add --no-cache "openvpn~=${OPENVPN_VERSION}" "iptables~=1.8"
